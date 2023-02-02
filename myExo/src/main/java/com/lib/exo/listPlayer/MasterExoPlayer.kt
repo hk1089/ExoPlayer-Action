@@ -8,11 +8,11 @@ import android.widget.ImageView
 import com.google.android.exoplayer2.ui.PlayerView
 
 /**
- * @author Hemraj Kumawat
- * ListExoPlayer is view used to place in recyclerview item.
+ * @author Pankaj Sharma
+ * MasterExoPlayer is view used to place in recyclerview item.
  *
  */
-class ListExoPlayer : FrameLayout {
+class MasterExoPlayer : FrameLayout {
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
@@ -31,8 +31,8 @@ class ListExoPlayer : FrameLayout {
     var isMute: Boolean = true
         set(value) {
             field = value
-            if (playerView != null && playerView!!.tag != null && playerView!!.tag is ListExoPlayerHelper) {
-                val masterExoPlayerHelper = (playerView!!.tag as ListExoPlayerHelper)
+            if (playerView != null && playerView!!.tag != null && playerView!!.tag is MasterExoPlayerHelper) {
+                val masterExoPlayerHelper = (playerView!!.tag as MasterExoPlayerHelper)
                 masterExoPlayerHelper.isMute = value
                 if (value)
                     masterExoPlayerHelper.exoPlayerHelper.mute()
@@ -46,7 +46,6 @@ class ListExoPlayer : FrameLayout {
     fun addPlayer(playerView: PlayerView, autoPlay: Boolean) {
         if (this.playerView == null) {
             this.playerView = playerView
-            playerView.useController = false
             addView(playerView)
             //This autoplay flag is used so we don't hide image view
             if (autoPlay) {

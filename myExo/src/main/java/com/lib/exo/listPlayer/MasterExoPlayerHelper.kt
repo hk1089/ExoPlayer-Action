@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Point
 import android.graphics.Rect
 import android.view.View
-import androidx.annotation.FloatRange
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -15,45 +14,39 @@ import com.google.android.exoplayer2.ui.PlayerView
 import com.lib.exo.listPlayer.ExoPlayerHelper.Listener
 
 /**
- * @author Hemraj Kumawat
- * ListExoPlayerHelper lightweight utility for playing video using ExoPlayer inside RecyclerView,
+ * @author Pankaj Sharma
+ * MasterExoPlayerHelper lightweight utility for playing video using ExoPlayer inside RecyclerView,
  * With this you can set
- * @param id Id of ListExoPlayer which is placed inside RecyclerView Item
+ * @param id Id of MasterExoPlayer which is placed inside RecyclerView Item
  * @param playStrategy Used to decide when video will play, this will be value between 0 to 1, if 0.5 set means when view has 50% visibility it will start play. Default is PlayStrategy.DEFAULT i.e. 0.75
  * @param autoPlay Used to device we need to autoplay video or not., Default value is true
  * @param muteStrategy Used to decide whether mute one player affects other player also or not, values may be MuteStrategy.ALL, MuteStrategy.INDIVIDUAL, if individual user need to manage isMute flag with there own
  * @param defaultMute Used to decide whether player is mute by default or not, Default Value is false
  * @param loop Used whether need to play video in looping or not, if 0 then no looping will be there, Default is Int.MAX_VALUE
  */
-class ListExoPlayerHelper(
+class MasterExoPlayerHelper(
     mContext: Context,
     private val id: Int,
-    private val autoPlay: Boolean = true,
-    @FloatRange(from = 0.0, to = 1.0)
-    val playStrategy: Float = PlayStrategy.DEFAULT,
-    @MuteStrategy.Values val muteStrategy: Int = MuteStrategy.ALL,
-    val defaultMute: Boolean = false,
-    val useController: Boolean = false,
-    val thumbHideDelay: Long = 0,
-    private val loop: Boolean = false
+    private val configs: Configs = Configs()
 ) {
-    private val playerView: PlayerView = PlayerView(mContext)
+    private val playerView: PlayerView
     val exoPlayerHelper: ExoPlayerHelper
 
-    var isMute = defaultMute
+    var isMute = configs.defaultMute
 
     init {
+        playerView = PlayerView(mContext)
         playerView.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-        playerView.useController = useController
+        playerView.useController = configs.useController
         exoPlayerHelper = ExoPlayerHelper(
             mContext = mContext,
             playerView = playerView,
-            loopVideo = loop
+            configs = configs
         )
         exoPlayerHelper.setListener(false, object : Listener {
             override fun onStart() {
                 super.onStart()
-                playerView.getPlayerParent()?.hideThumbImage(thumbHideDelay)
+                playerView.getPlayerParent()?.hideThumbImage(configs.thumbHideDelay)
                 playerView.getPlayerParent()?.listener?.onStart()
             }
 
@@ -108,16 +101,16 @@ class ListExoPlayerHelper(
         return rect
     }
 
-    private fun visibleAreaOffset(player: ListExoPlayer, parent: View): Float {
+    private fun visibleAreaOffset(player: MasterExoPlayer, parent: View): Float {
         val videoRect = getViewRect(player)
         val parentRect = getViewRect(parent)
 
-        return if ((parentRect.contains(videoRect) || parentRect.intersect(videoRect))) {
+        if ((parentRect.contains(videoRect) || parentRect.intersect(videoRect))) {
             val visibleArea = (videoRect.height() * videoRect.width()).toFloat()
-            val viewArea = player.width * player.height
-            if (viewArea <= 0f) 1f else visibleArea / viewArea
+            val viewArea = player.getWidth() * player.getHeight()
+            return if (viewArea <= 0f) 1f else visibleArea / viewArea
         } else {
-            0f
+            return 0f
         }
     }
 
@@ -125,12 +118,12 @@ class ListExoPlayerHelper(
         val videoRect = getViewRect(parent)
         val parentRect = getViewRect(parent)
 
-        return if ((parentRect.contains(videoRect) || parentRect.intersect(videoRect))) {
+        if ((parentRect.contains(videoRect) || parentRect.intersect(videoRect))) {
             val visibleArea = (videoRect.height() * videoRect.width()).toFloat()
             val viewArea = parent.getWidth() * parent.getHeight()
-            if (viewArea <= 0f) 1f else visibleArea / viewArea
+            return if (viewArea <= 0f) 1f else visibleArea / viewArea
         } else {
-            0f
+            return 0f
         }
     }
 
@@ -153,9 +146,9 @@ class ListExoPlayerHelper(
 
                     for (i in 0 until visibleCount) {
                         val view = recyclerView.getChildAt(i) ?: continue
-                        if (visibleAreaOffset(view) >= playStrategy) {
-                            val listExoPlayer = view.findViewById<View>(id)
-                            if (listExoPlayer != null && listExoPlayer is ListExoPlayer) {
+                        if (visibleAreaOffset(view) >= configs.playStrategy) {
+                            val masterExoPlayer = view.findViewById<View>(id)
+                            if (masterExoPlayer != null && masterExoPlayer is MasterExoPlayer) {
                                 play(view)
                             } else {
                                 exoPlayerHelper.stop()
@@ -163,7 +156,6 @@ class ListExoPlayerHelper(
                             }
                             break
                         }
-
                     }
                 }
             }
@@ -172,8 +164,8 @@ class ListExoPlayerHelper(
         override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
             super.onScrolled(recyclerView, dx, dy)
             val layoutManager = recyclerView.layoutManager as LinearLayoutManager
-            firstVisibleItem = layoutManager?.findFirstVisibleItemPosition() ?: 0;
-            lastVisibleItem = layoutManager?.findLastVisibleItemPosition() ?: 0;
+            firstVisibleItem = layoutManager.findFirstVisibleItemPosition() ?: 0;
+            lastVisibleItem = layoutManager.findLastVisibleItemPosition() ?: 0;
             visibleCount = (lastVisibleItem - firstVisibleItem) + 1;
 
             if (dx == 0 && dy == 0 && recyclerView.childCount > 0) {
@@ -228,53 +220,52 @@ class ListExoPlayerHelper(
     }
 
     private fun play(view: View) {
-        val listExoPlayer = view.findViewById<View>(id)
+        val masterExoPlayer = view.findViewById<View>(id)
 
-        if (listExoPlayer != null && listExoPlayer is ListExoPlayer) {
-            if (listExoPlayer.playerView == null) {
+        if (masterExoPlayer != null && masterExoPlayer is MasterExoPlayer) {
+            if (masterExoPlayer.playerView == null) {
 
                 playerView.getPlayerParent()?.removePlayer()
-                listExoPlayer.addPlayer(playerView, autoPlay)
-                if (listExoPlayer.url?.isNotBlank() == true) {
-                    if (muteStrategy == MuteStrategy.ALL) {
-                        listExoPlayer.isMute = isMute
+                masterExoPlayer.addPlayer(playerView, configs.autoPlay)
+                if (masterExoPlayer.url?.isNotBlank() == true) {
+                    if (configs.muteStrategy == MuteStrategy.ALL) {
+                        masterExoPlayer.isMute = isMute
                         if (isMute) {
-                            listExoPlayer.isMute = true
+                            masterExoPlayer.isMute = true
                             exoPlayerHelper.mute()
                         } else {
-                            listExoPlayer.isMute = false
+                            masterExoPlayer.isMute = false
                             exoPlayerHelper.unMute()
                         }
-                    } else if (muteStrategy == MuteStrategy.INDIVIDUAL) {
-                        if (listExoPlayer.isMute) {
-                            listExoPlayer.isMute = true
+                    } else if (configs.muteStrategy == MuteStrategy.INDIVIDUAL) {
+                        if (masterExoPlayer.isMute) {
+                            masterExoPlayer.isMute = true
                             exoPlayerHelper.mute()
                         } else {
-                            listExoPlayer.isMute = false
+                            masterExoPlayer.isMute = false
                             exoPlayerHelper.unMute()
                         }
                     }
-                    exoPlayerHelper.setUrl(listExoPlayer.url!!, autoPlay)
+                    exoPlayerHelper.setUrl(masterExoPlayer.url!!, configs.autoPlay)
                 }
-
                 playerView.getPlayerParent()?.listener?.onPlayerReady()
             }
         }
     }
 
     private fun releasePlayer(view: View) {
-        val listExoPlayer = view.findViewById<View>(id)
-        if (listExoPlayer != null && listExoPlayer is ListExoPlayer) {
-            if (listExoPlayer.playerView != null) {
+        val masterExoPlayer = view.findViewById<View>(id)
+        if (masterExoPlayer != null && masterExoPlayer is MasterExoPlayer) {
+            if (masterExoPlayer.playerView != null) {
                 exoPlayerHelper.stop()
-                listExoPlayer.removePlayer()
+                masterExoPlayer.removePlayer()
             }
         }
     }
 
-    private fun PlayerView.getPlayerParent(): ListExoPlayer? {
-        if (this.parent != null && this.parent is ListExoPlayer) {
-            return this.parent as ListExoPlayer
+    private fun PlayerView.getPlayerParent(): MasterExoPlayer? {
+        if (this.parent != null && this.parent is MasterExoPlayer) {
+            return this.parent as MasterExoPlayer
         }
         return null
     }

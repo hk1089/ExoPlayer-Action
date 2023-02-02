@@ -11,7 +11,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.OnLifecycleEvent
 import com.google.android.exoplayer2.*
-import com.google.android.exoplayer2.source.*
+import com.google.android.exoplayer2.source.ClippingMediaSource
+import com.google.android.exoplayer2.source.LoopingMediaSource
+import com.google.android.exoplayer2.source.MediaSource
+import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.source.dash.DashMediaSource
 import com.google.android.exoplayer2.source.hls.HlsMediaSource
 import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource
@@ -19,24 +22,67 @@ import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.exoplayer2.upstream.*
 import com.google.android.exoplayer2.upstream.cache.*
 import com.google.android.exoplayer2.util.Util
+import com.lib.exo.R
+import java.io.File
 
-open class ExoPlayerHelper(val mContext: Context, private val playerView: PlayerView, private val loopVideo: Boolean = false) : LifecycleObserver {
+class ExoPlayerHelper(
+    val mContext: Context,
+    private val playerView: PlayerView,
+    private val configs: Configs = Configs()
+) : LifecycleObserver {
 
-    private val mPlayer by lazy { ExoPlayer.Builder(mContext).build().apply {
-        repeatMode = if(loopVideo)  Player.REPEAT_MODE_ALL else Player.REPEAT_MODE_OFF
-    } }
-
-    var cacheSizeInMb: Long = 500
-
+    private var mPlayer: ExoPlayer
     var progressRequired: Boolean = false
 
     companion object {
         private var simpleCache: SimpleCache? = null
-        var mDataSourceFactory = DefaultHttpDataSource.Factory()
+        var mLoadControl: DefaultLoadControl? = null
+        var mDataSourceFactory: DataSource.Factory? = null
+        var mCacheEnabled = false
     }
 
     init {
+        if (mCacheEnabled != configs.enableCache || mDataSourceFactory == null) {
 
+            mDataSourceFactory = null
+
+            val bandwidthMeter = DefaultBandwidthMeter()
+            mDataSourceFactory = DefaultDataSourceFactory(
+                mContext,
+                Util.getUserAgent(mContext, "ListPlayer"),
+                bandwidthMeter
+            )
+
+            // LoadControl that controls when the MediaSource buffers more media, and how much media is buffered.
+            // LoadControl is injected when the player is created.
+            val builder = DefaultLoadControl.Builder()
+            builder.setAllocator(DefaultAllocator(true, 2 * 1024 * 1024))
+            builder.setBufferDurationsMs(
+                configs.minBufferMs,
+                configs.maxBufferMs,
+                configs.bufferForPlaybackMs,
+                configs.bufferForPlaybackAfterRebufferMs
+            )
+            builder.setPrioritizeTimeOverSizeThresholds(true)
+            mLoadControl = builder.createDefaultLoadControl()
+
+            if (configs.enableCache) {
+                val evictor = LeastRecentlyUsedCacheEvictor(configs.cacheSizeInMb * 1024 * 1024)
+                val file = File(mContext.getCacheDir(), "media")
+
+                if (simpleCache == null)
+                    simpleCache = SimpleCache(file, evictor)
+
+                mDataSourceFactory = DefaultDataSourceFactory(
+                    mContext,
+                    Util.getUserAgent(mContext, "ListPlayer"),
+                    bandwidthMeter
+                )
+            }
+        }
+        mCacheEnabled = configs.enableCache
+
+        mPlayer = ExoPlayer.Builder(mContext).build()
         playerView.setShutterBackgroundColor(Color.TRANSPARENT)
         playerView.player = mPlayer
 
@@ -57,10 +103,10 @@ open class ExoPlayerHelper(val mContext: Context, private val playerView: Player
         if (lifecycle?.currentState == Lifecycle.State.RESUMED) {
             this.url = url
             mediaSource = buildMediaSource(Uri.parse(url))
+            loopIfNecessary()
             mPlayer.playWhenReady = autoPlay
             isPreparing = true
-            mPlayer.addMediaSource(mediaSource!!)
-            mPlayer.prepare()
+            mPlayer.prepare(mediaSource!!)
         }
     }
 
@@ -86,24 +132,33 @@ open class ExoPlayerHelper(val mContext: Context, private val playerView: Player
     fun clip(start: Long, end: Long) {
         if (mediaSource != null) {
             mediaSource = ClippingMediaSource(mediaSource!!, start * 1000, end * 1000)
-            mPlayer.addMediaSource(mediaSource!!)
-            mPlayer.prepare()
+            loopIfNecessary()
         }
+        mediaSource?.let { mPlayer.prepare(it) }
     }
 
     private fun buildMediaSource(uri: Uri): MediaSource {
-        return when (val type = Util.inferContentType(uri)) {
-            C.TYPE_SS -> SsMediaSource.Factory(mDataSourceFactory).createMediaSource(MediaItem.fromUri(Uri.parse(url)))
-            C.TYPE_DASH -> DashMediaSource.Factory(mDataSourceFactory).createMediaSource(MediaItem.fromUri(Uri.parse(url)))
-            C.TYPE_HLS -> HlsMediaSource.Factory(mDataSourceFactory).createMediaSource(MediaItem.fromUri(Uri.parse(url)))
-            C.TYPE_OTHER -> ProgressiveMediaSource.Factory(mDataSourceFactory).createMediaSource(MediaItem.fromUri(Uri.parse(url)))
+        val type = Util.inferContentType(uri)
+        when (type) {
+            C.TYPE_SS -> return SsMediaSource.Factory(mDataSourceFactory!!).createMediaSource(MediaItem.fromUri(Uri.parse(url)))
+            C.TYPE_DASH -> return DashMediaSource.Factory(mDataSourceFactory!!).createMediaSource(MediaItem.fromUri(Uri.parse(url)))
+            C.TYPE_HLS -> return HlsMediaSource.Factory(mDataSourceFactory!!).createMediaSource(MediaItem.fromUri(Uri.parse(url)))
+            C.TYPE_OTHER -> return ProgressiveMediaSource.Factory(mDataSourceFactory!!)
+                .createMediaSource(MediaItem.fromUri(Uri.parse(url)))
             else -> {
                 throw IllegalStateException("Unsupported type: $type") as Throwable
             }
         }
     }
 
-
+    /**
+     * Looping if user set if looping necessary
+     */
+    private fun loopIfNecessary() {
+        if (configs.loopVideo) {
+            mediaSource = LoopingMediaSource(mediaSource!!, configs.loopCount)
+        }
+    }
 
     /**
      * Used to start player
@@ -139,7 +194,7 @@ open class ExoPlayerHelper(val mContext: Context, private val playerView: Player
     }
 
 
-    private val durationHandler = Handler()
+    val durationHandler = Handler()
     private var durationRunnable: Runnable? = null
 
     private fun startTimer() {
@@ -169,7 +224,8 @@ open class ExoPlayerHelper(val mContext: Context, private val playerView: Player
     fun setQualityUrl(qualityUrl: String) {
         val currentPosition = mPlayer.currentPosition
         mediaSource = buildMediaSource(Uri.parse(qualityUrl))
-        mPlayer.addMediaSource(mediaSource!!)
+        loopIfNecessary()
+        mPlayer.prepare(mediaSource!!)
         mPlayer.seekTo(currentPosition)
     }
 
@@ -178,7 +234,7 @@ open class ExoPlayerHelper(val mContext: Context, private val playerView: Player
      */
     fun setSpeed(speed: Float) {
         val param = PlaybackParameters(speed)
-        mPlayer.playbackParameters = param
+        mPlayer.setPlaybackParameters(param)
     }
 
     /**
@@ -224,7 +280,7 @@ open class ExoPlayerHelper(val mContext: Context, private val playerView: Player
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
-    protected fun onResume(){
+    protected fun onResume() {
         mPlayer.playWhenReady = true
     }
 
@@ -237,9 +293,7 @@ open class ExoPlayerHelper(val mContext: Context, private val playerView: Player
         this.progressRequired = progressRequired
         mPlayer.addListener(object : Player.Listener {
 
-//            override fun onPlayerError(error: ExoPlaybackException?) {
-//                listener.onError(error)
-//            }
+
 
             override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
 
@@ -284,9 +338,7 @@ open class ExoPlayerHelper(val mContext: Context, private val playerView: Player
             durationRunnable = Runnable {
                 listener.onProgress(mPlayer.currentPosition)
                 if (mPlayer.playWhenReady) {
-                    if(durationRunnable != null) {
-                        durationHandler.postDelayed(durationRunnable!!, 500)
-                    }
+                    durationRunnable?.let { durationHandler.postDelayed(it, 500) }
                 }
             }
         }
