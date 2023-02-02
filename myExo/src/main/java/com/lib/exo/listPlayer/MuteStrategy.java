@@ -1,8 +1,9 @@
-package com.lib.exo.listPlayer
+package com.lib.exo.listPlayer;
 
-import androidx.annotation.IntDef
-import java.lang.annotation.Retention
-import java.lang.annotation.RetentionPolicy
+import androidx.annotation.IntDef;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
  * @author Hemraj Kumawat
@@ -11,11 +12,13 @@ import java.lang.annotation.RetentionPolicy
  * MuteStrategy.ALL - When this set single mute on single item will mute all other instances, just like instagram
  * MuteStrategy.INDIVIDUAL - When this set User have to manage individual mute status as per items in recyclerview.
  */
-object MuteStrategy {
-    const val ALL = 1
-    const val INDIVIDUAL = 2
+public class MuteStrategy {
 
-    @IntDef(ALL, INDIVIDUAL)
+    @IntDef({MuteStrategy.ALL, MuteStrategy.INDIVIDUAL})
     @Retention(RetentionPolicy.SOURCE)
-    annotation class Values
+    public @interface Values {
+    }
+
+    public static final int ALL = 1;
+    public static final int INDIVIDUAL = 2;
 }
