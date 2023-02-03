@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="HkStoryView">
+        <attr name="hkStoryImageRadius" format="dimension" />
+        <attr name="hkStoryItemIndicatorWidth" format="dimension" />
+        <attr name="hkSpaceBetweenImageAndIndicator" format="dimension" />
+        <attr name="hkPendingIndicatorColor" format="color" />
+        <attr name="hkVisitedIndicatorColor" format="color" />
+        <attr name="hkPageTransformer" format="enum">
+            <enum name="BACKGROUND_TO_FOREGROUND_TRANSFORMER" value="0"/>
+            <enum name="CUBE_OUT_TRANSFORMER" value="1"/>
+            <enum name="FOREGROUND_TO_BACKGROUND_TRANSFORMER" value="2"/>
+            <enum name="ZOOM_OUT_PAGE_TRANSFORMER" value="3"/>
+
+            <enum name="CUBE_IN_TRANSFORMER" value="4"/>
+            <enum name="ROTATE_DOWN_PAGE_TRANSFORMER" value="5"/>
+            <enum name="ROTATE_UP_PAGE_TRANSFORMER" value="6"/>
+            <enum name="ZOOM_IN_TRANSFORMER" value="7"/>
+        </attr>
+
+        <!--Full screen horizontal progress attributes-->
+        <!--Set height of progress bar.-->
+        <attr name="hkFullScreenProgressBarHeight" format="dimension" />
+        <!--Set margin between two progress bars.-->
+        <attr name="hkFullScreenGapBetweenProgressBar" format="dimension" />
+        <!--Set primary color of progress bar.-->
+        <attr name="hkFullScreenProgressBarPrimaryColor" format="color" />
+        <!--Set color of progress i.e secondary color of progress bar.-->
+        <attr name="hkFullScreenProgressBarSecondaryColor" format="color" />
+        <!--Set duration for single story view.-->
+        <attr name="hkFullScreenSingleStoryDisplayTime" format="integer" />
+    </declare-styleable>
+
+    <declare-styleable name="HkStoryHorizontalProgressView">
+        <!--Set height of progress bar.-->
+        <attr name="hkProgressBarHeight" format="dimension" />
+        <!--Set margin between two progress bars.-->
+        <attr name="hkGapBetweenProgressBar" format="dimension" />
+        <!--Set primary color of progress bar.-->
+        <attr name="hkProgressBarPrimaryColor" format="color" />
+        <!--Set color of progress i.e secondary color of progress bar.-->
+        <attr name="hkProgressBarSecondaryColor" format="color" />
+        <!--Set duration for single story view.-->
+        <attr name="hkSingleStoryDisplayTime" format="integer" />
+    </declare-styleable>
+
+    <declare-styleable name="StoriesProgressView">
+        <attr name="progressCount" format="integer|reference" />
+    </declare-styleable>
+</resources>
