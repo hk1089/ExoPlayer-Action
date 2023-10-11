@@ -7,6 +7,7 @@ import kotlinx.parcelize.Parcelize
 @Parcelize
 data class HkStoryModel(
     var id: Int = 0,
+    var statusId: Int = 0,
     var mediaUrl: String?,
     var name: String?,
     var time: String?,

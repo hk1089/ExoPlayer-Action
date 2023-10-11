@@ -6,6 +6,7 @@ import kotlinx.parcelize.Parcelize
 @Parcelize
 data class HkUserStoryModel(
     val id: String?,
+    val userId: Int = 0,
     val userName: String?,
     val userStoryList: ArrayList<HkStoryModel>,
     var lastStoryPointIndex: Int = 0
