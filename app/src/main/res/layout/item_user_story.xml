@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:paddingStart="@dimen/dp_4"
+    android:paddingTop="@dimen/dp_8"
+    android:paddingEnd="@dimen/dp_4"
+    android:paddingBottom="@dimen/dp_8">
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_start"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_begin="@dimen/dp_16" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_end"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_end="@dimen/dp_16" />
+
+    <com.lib.exo.statusView.HkStoryView
+        android:id="@+id/msvStory"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/guideline_start"
+        app:layout_constraintTop_toTopOf="parent"
+        app:hkFullScreenGapBetweenProgressBar="@dimen/dp_2"
+        app:hkFullScreenProgressBarHeight="@dimen/dp_4"
+        app:hkFullScreenProgressBarPrimaryColor="@color/white"
+        app:hkFullScreenProgressBarSecondaryColor="@color/progress_bg"
+        app:hkFullScreenSingleStoryDisplayTime="4000"
+        app:hkPageTransformer="ZOOM_IN_TRANSFORMER"
+        app:hkPendingIndicatorColor="@color/red_love"
+        app:hkVisitedIndicatorColor="@color/seen_story_indicator_color"
+        app:hkSpaceBetweenImageAndIndicator="@dimen/dp_1"
+        app:hkStoryImageRadius="@dimen/dp_8"
+        app:hkStoryItemIndicatorWidth="@dimen/dp_1"
+        tools:background="@color/cardview_dark_background" />
+
+    <TextView
+        android:id="@+id/tvUserName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/dp_14"
+        android:layout_marginTop="@dimen/dp_4"
+        android:ellipsize="end"
+        android:fontFamily="sans-serif-black"
+        android:maxEms="18"
+        android:maxLines="1"
+        android:textAllCaps="false"
+        android:textColor="@color/material_on_background_disabled"
+        android:textSize="@dimen/sp_14"
+        app:layout_constraintBottom_toBottomOf="@+id/msvStory"
+        app:layout_constraintStart_toEndOf="@+id/msvStory"
+        app:layout_constraintTop_toTopOf="@+id/msvStory" />
+</androidx.constraintlayout.widget.ConstraintLayout>

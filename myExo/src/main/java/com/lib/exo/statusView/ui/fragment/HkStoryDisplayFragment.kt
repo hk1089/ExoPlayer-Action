@@ -153,7 +153,10 @@ class HkStoryDisplayFragment(
      * while viewpager transition.
      */
     private fun didVisibilityChange() {
-        if (mStories.isEmpty()) return
+        if (mStories.isEmpty()){
+            requireActivity().finish()
+            return
+        }
         if (isResumed && isVisible) {
             // Once resumed and at last
             // our Fragment is really visible to user.
@@ -211,6 +214,8 @@ class HkStoryDisplayFragment(
 
             if (mStories[lastStoryPointIndex].isMediaTypeVideo)
                 prepareMedia(mStories[lastStoryPointIndex])
+        }else{
+            requireActivity().finish()
         }
     }
 

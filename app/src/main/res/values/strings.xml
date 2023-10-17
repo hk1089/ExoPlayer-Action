@@ -7,6 +7,10 @@
     <string name="next">Next</string>
     <string name="previous">Previous</string>
 
+    <string name="tab_chats">Chats</string>
+    <string name="tab_status">Status</string>
+    <string name="tab_activity">Activity</string>
+
     <string name="lorem_ipsum">
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam in scelerisque sem. Mauris
         volutpat, dolor id interdum ullamcorper, risus dolor egestas lectus, sit amet mattis purus
