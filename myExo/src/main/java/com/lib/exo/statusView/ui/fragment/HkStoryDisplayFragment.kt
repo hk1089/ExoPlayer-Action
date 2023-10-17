@@ -153,6 +153,7 @@ class HkStoryDisplayFragment(
      * while viewpager transition.
      */
     private fun didVisibilityChange() {
+        if (mStories.isEmpty()) return
         if (isResumed && isVisible) {
             // Once resumed and at last
             // our Fragment is really visible to user.
