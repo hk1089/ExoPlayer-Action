@@ -188,25 +188,29 @@ class HkStoryDisplayFragment(
 
     private fun manageInitialStoryIndex() {
         initMediaPlayer()
+        if (mStories.isNotEmpty()) {
+            when {
+                lastStoryPointIndex == INITIAL_STORY_INDEX && mStories[lastStoryPointIndex].isStorySeen.not() -> {
+                    lastStoryPointIndex = INITIAL_STORY_INDEX
+                }
 
-        when {
-            lastStoryPointIndex == INITIAL_STORY_INDEX && mStories[lastStoryPointIndex].isStorySeen.not() -> {
-                lastStoryPointIndex = INITIAL_STORY_INDEX
+                lastStoryPointIndex == INITIAL_STORY_INDEX && mStories[lastStoryPointIndex].isStorySeen && (lastStoryPointIndex + 1) == mStories.count() -> {
+                    lastStoryPointIndex = INITIAL_STORY_INDEX
+                }
+
+                lastStoryPointIndex >= INITIAL_STORY_INDEX && mStories[lastStoryPointIndex].isStorySeen && (lastStoryPointIndex + 1) < mStories.count() -> {
+                    lastStoryPointIndex += 1
+                }
+
+                lastStoryPointIndex > INITIAL_STORY_INDEX && mStories[lastStoryPointIndex].isStorySeen && (lastStoryPointIndex + 1) == mStories.count() -> {
+                    mBinding.dpvProgress.startOverProgress()
+                    lastStoryPointIndex = INITIAL_STORY_INDEX
+                }
             }
-            lastStoryPointIndex == INITIAL_STORY_INDEX && mStories[lastStoryPointIndex].isStorySeen && (lastStoryPointIndex + 1) == mStories.count() -> {
-                lastStoryPointIndex = INITIAL_STORY_INDEX
-            }
-            lastStoryPointIndex >= INITIAL_STORY_INDEX && mStories[lastStoryPointIndex].isStorySeen && (lastStoryPointIndex + 1) < mStories.count() -> {
-                lastStoryPointIndex += 1
-            }
-            lastStoryPointIndex > INITIAL_STORY_INDEX && mStories[lastStoryPointIndex].isStorySeen && (lastStoryPointIndex + 1) == mStories.count() -> {
-                mBinding.dpvProgress.startOverProgress()
-                lastStoryPointIndex = INITIAL_STORY_INDEX
-            }
+
+            if (mStories[lastStoryPointIndex].isMediaTypeVideo)
+                prepareMedia(mStories[lastStoryPointIndex])
         }
-
-        if (mStories[lastStoryPointIndex].isMediaTypeVideo)
-            prepareMedia(mStories[lastStoryPointIndex])
     }
 
     private fun initStoryDisplayProgressView() {
